@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡️고등학생 MBTI 심리 테스트: 너의 유형은?!</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font (Tailwind default) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 커스텀 폰트 적용 및 배경 그라데이션 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        /* 버튼 스타일링 */
+        .choice-btn {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.5), 0 4px 6px -2px rgba(168, 85, 247, 0.05);
+        }
+        /* 결과 카드 애니메이션 */
+        .result-card {
+            animation: fadeIn 1s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- 메인 컨테이너 -->
+    <div id="quiz-container" class="w-full max-w-lg bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl text-white">
+
+        <!-- 타이틀 -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-center mb-6 text-purple-400">
+            ⚡️고등학생 MBTI 유형 테스트
+        </h1>
+        <p class="text-center text-gray-400 mb-8">
+            단 10가지 질문으로 알아보는 나의 학교 생활 페르소나!
+        </p>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="text-center">
+            <p class="text-lg mb-8 text-gray-300">
+                솔직하게 답할수록 정확한 결과가 나옵니다! 😎
+            </p>
+            <button onclick="startQuiz()" class="px-8 py-3 bg-purple-600 rounded-lg text-xl font-bold shadow-lg choice-btn hover:bg-purple-700">
+                테스트 시작! 🚀
+            </button>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="hidden">
+            <div class="mb-6">
+                <p id="progress-text" class="text-sm text-gray-400 mb-2">질문 1/10</p>
+                <div class="w-full bg-gray-600 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-purple-500 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <p id="question-text" class="text-xl sm:text-2xl font-semibold mb-8 min-h-[80px]">
+                <!-- Question text will be inserted here -->
+            </p>
+
+            <div id="choices-container" class="space-y-4">
+                <!-- Choice buttons will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden text-center result-card">
+            <h2 class="text-3xl font-bold text-purple-400 mb-4">✨ 당신의 학교 생활 유형은?! ✨</h2>
+            <div id="result-box" class="bg-gray-700 p-6 rounded-xl shadow-inner border-t-4 border-purple-500">
+                <h3 id="result-type" class="text-4xl font-extrabold mb-2 text-yellow-300"></h3>
+                <p id="result-name" class="text-xl font-semibold text-gray-200 mb-4"></p>
+                <p id="result-description" class="text-lg text-gray-300 leading-relaxed"></p>
+                <p id="result-example" class="mt-4 pt-4 border-t border-gray-600 text-sm italic text-gray-400">
+                    <span class="font-bold text-purple-300">👍 예시:</span>
+                </p>
+            </div>
+            
+            <button onclick="restartQuiz()" class="mt-8 px-8 py-3 bg-purple-600 rounded-lg text-xl font-bold shadow-lg choice-btn hover:bg-purple-700">
+                다시 테스트하기 🔄
+            </button>
+            <p id="raw-score" class="text-xs text-gray-500 mt-4"></p>
+        </div>
+
+    </div>
+
+    <script>
+        // 전역 변수 설정
+        let currentQuestionIndex = 0;
+        let score = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        const questions = [
+            { // E/I (2 Qs)
+                q: "주말에 계획이 없다면, 당신의 선택은?",
+                choices: [
+                    { text: "친구들에게 연락해서 '뭐라도 하자!'고 즉흥적으로 약속을 잡는다.", value: 'E' },
+                    { text: "혼자 좋아하는 콘텐츠를 보거나 잠을 자며 방해받지 않고 푹 쉰다.", value: 'I' },
+                ]
+            },
+            {
+                q: "낯선 반 친구와 단둘이 있을 때, 분위기를 어떻게 이끌어갈까요?",
+                choices: [
+                    { text: "어색함을 못 참고 먼저 말을 걸어본다. (날씨, 숙제 등)", value: 'E' },
+                    { text: "조용히 내 할 일에 집중하며 말을 걸어주길 기다린다.", value: 'I' },
+                ]
+            },
+            { // S/N (3 Qs)
+                q: "팀 과제를 받았다! 가장 먼저 생각나는 것은?",
+                choices: [
+                    { text: "당장 실행 가능한 세부 역할 분담과 현실적인 일정표를 짠다.", value: 'S' },
+                    { text: "이번 과제를 통해 얻을 수 있는 '큰 그림'과 '혁신적인 아이디어'를 떠올린다.", value: 'N' },
+                ]
+            },
+            {
+                q: "친구에게 복잡한 이야기를 들었을 때, 당신의 반응은?",
+                choices: [
+                    { text: "“그래서 결론이 뭔데? 핵심 사실만 말해줘.”", value: 'S' },
+                    { text: "“그 말 속에 숨겨진 의도가 뭐였을까? 친구의 감정은 어땠을까?”", value: 'N' },
+                ]
+            },
+            {
+                q: "시험 공부를 할 때, 더 재미있는 방법은?",
+                choices: [
+                    { text: "교과서의 내용을 정확히 외우고, 출제 가능성 높은 문제 유형을 파악한다.", value: 'S' },
+                    { text: "개념들 간의 연결고리를 찾고, '왜' 이런 원리가 나왔는지 추론해본다.", value: 'N' },
+                ]
+            },
+            { // T/F (2 Qs)
+                q: "친구가 울면서 찾아왔을 때, 당신이 먼저 하는 행동은?",
+                choices: [
+                    { text: "눈물의 원인을 분석하고, 가장 논리적이고 효율적인 해결책을 제시한다. ", value: 'T' },
+                    { text: "따뜻하게 안아주며, “얼마나 힘들었니”라고 감정을 공감해준다.", value: 'F' },
+                ]
+            },
+            {
+                q: "친구가 잘못된 선택을 하고 있다면, 솔직히 조언해 줄까요?",
+                choices: [
+                    { text: "감정이 상하더라도 사실 그대로의 비판과 냉정한 조언을 해준다.", value: 'T' },
+                    { text: "친구가 상처받지 않도록 최대한 부드럽게 돌려 말하거나 긍정적인 면을 강조한다.", value: 'F' },
+                ]
+            },
+            { // J/P (3 Qs)
+                q: "학교에 늦을 것 같을 때, 당신의 행동은?",
+                choices: [
+                    { text: "지각 5분 전 미리 선생님께 연락해서 정확한 도착 예정 시간을 알린다.", value: 'J' },
+                    { text: "도착 직전에 '거의 다 왔어요!'라고 대충 말하거나, 도착해서 변명한다.", value: 'P' },
+                ]
+            },
+            {
+                q: "방학 숙제를 할 때, 당신의 스타일은?",
+                choices: [
+                    { text: "방학 시작과 동시에 계획을 세워 일찌감치 끝내놓고 남은 기간을 즐긴다.", value: 'J' },
+                    { text: "마감일 직전에 모든 에너지를 쏟아붓는 '벼락치기'의 짜릿함을 즐긴다.", value: 'P' },
+                ]
+            },
+            {
+                q: "주말 약속은 언제 잡는 것이 가장 좋을까요?",
+                choices: [
+                    { text: "최소 일주일 전에 약속을 정하고, 약속 장소와 시간을 확실히 못 박아둔다.", value: 'J' },
+                    { text: "금요일 저녁에 '우리 내일 뭐 할까?'라며 즉흥적으로 정한다.", value: 'P' },
+                ]
+            }
+        ];
+
+        // 16가지 결과 타입 정의 (재미있는 페르소나 포함)
+        const results = {
+            'ESTJ': { type: 'ESTJ', name: '학생회장 (Disciplined President)', desc: '학교의 질서와 규율을 지키는 모범생 리더. 철저한 계획과 빈틈없는 실행력을 자랑합니다. 가끔 너무 FM이라 친구들이 힘들어할 수도 있지만, 가장 믿음직한 사람이에요.', example: '모든 과목 노트가 칼 각으로 정리되어 있고, 체육대회 준비는 일주일 전에 끝냄.' },
+            'ESFJ': { type: 'ESFJ', name: '반의 공식 엄마/아빠 (The Class Mom/Dad)', desc: '모두의 고민을 들어주고 생일을 챙기는 따뜻한 분위기 메이커. 내가 불편해도 남이 편하면 괜찮은 이타적인 인싸입니다. 반 분위기를 훈훈하게 만드는 능력자!', example: '친구들이 아프면 보건실까지 데려가주고, 몰래 약을 챙겨줌.' },
+            'ENFJ': { type: 'ENFJ', name: '선한 영향력 인플루언서 (Good Influence Influencer)', desc: '친구들의 잠재력을 끌어내고 "넌 할 수 있어!"라고 외치는 응원단장. 정의감이 강해 불의를 보면 참지 못합니다. 선한 비전으로 모두를 이끌어가는 리더.', example: '밥 먹다가도 세상 걱정을 하며, 친구들에게 장학금 정보를 알려줌.' },
+            'ENTJ': { type: 'ENTJ', name: '학교 최고 전략가 (School\'s Top Strategist)', desc: '10년 뒤의 계획까지 세우는 야망가. "비전"과 "효율"이 가장 중요해요. 인간관계보다 성과를 중시해서 차가워 보일 수 있지만, 목적을 위해 달려가는 카리스마!', example: '쉬는 시간에 다음 학기 수강 계획을 짜거나 대학교 입시 요강을 분석함.' },
+            'ISTJ': { type: 'ISTJ', name: '조용한 노력파 (Quiet Hard Worker)', desc: '묵묵히 자기 할 일 다 하는 성실의 아이콘. 원리원칙을 중요시하며, 약속은 철저히 지킵니다. 겉으로 티는 안 나지만 내신은 항상 상위권이에요.', example: '선생님도 모르게 일찍 와서 청소하거나, 빌려 간 책은 반납일보다 하루 먼저 돌려줌.' },
+            'ISFJ': { type: 'ISFJ', name: '숨겨진 봉사왕 (Hidden Service King/Queen)', desc: '눈에 띄지 않게 친구들을 도와주는 그림자 조력자. 겸손하고 따뜻하며, 남을 비난하는 일은 거의 없습니다. 친한 친구에게만 속마음을 털어놓는 스타일.', example: '발표 자료의 오타를 조용히 수정해 주거나, 숙제 안 해 온 친구를 위해 교과서를 대신 펴줌.' },
+            'INFJ': { type: 'INFJ', name: '신비로운 사서 (Mysterious Librarian)', desc: '깊은 통찰력과 이상을 가진 신비주의자. 평소엔 조용하지만, 한번 입을 열면 모두를 감동시키는 통찰력의 소유자. 인간의 본질에 대해 밤새 고민해요.', example: '다이어리에 깨달음을 기록하고, 친구의 미래를 예언하듯 조언해 줌.' },
+            'INTJ': { type: 'INTJ', name: '천재적 은둔자 (Genius Hermit)', desc: '학교를 거대한 실험실로 여기는 논리 끝판왕. 지적 호기심을 채우는 데 시간을 쓰며, 인간관계는 비효율적이라고 생각합니다. 겉은 쿨하지만 속은 뜨거운 지성인.', example: '쉬는 시간에 양자역학 다큐멘터리를 보거나, 친구의 주장을 논리적으로 반박함.' },
+            'ESTP': { type: 'ESTP', name: '즉흥적인 모험가 (Impulsive Adventurer)', desc: '지금 이 순간이 가장 중요한 에너자이저. 지루한 건 딱 질색! 선생님 몰래 짜릿한 장난을 치거나, 갑자기 여행을 떠나자고 제안하는 행동파입니다. 일단 해보고 생각하는 것이 좌우명!', example: '갑자기 급식 메뉴를 바꾸자고 제안하거나, 시험 다음 날 바로 PC방에 감.' },
+            'ESFP': { type: 'ESFP', name: '학교 축제의 별 (Star of the School Festival)', desc: '주변을 즐겁게 만드는 타고난 연예인. 주목받는 것을 좋아하고, 어디든 ESFP가 있으면 웃음이 끊이지 않아요. 인생을 즐기는 자유로운 영혼!', example: '교실에서 갑자기 댄스 파티를 주도하거나, 모든 행사에 자원하여 무대에 섬.' },
+            'ENFP': { type: 'ENFP', name: '발상 전환 마법사 (Idea-Changing Magician)', desc: '아이디어와 호기심이 폭발하는 자유로운 영혼. “혹시 이런 건 어때?”라며 끊임없이 새로운 제안을 해요. 열정적이지만 끈기는 조금 부족할 수도 있어요.', example: '5분 만에 3가지 새로운 동아리를 만들자고 제안하고, 며칠 뒤 다른 아이디어에 빠짐.' },
+            'ENTP': { type: 'ENTP', name: '논리적 토론 챔피언 (Logical Debate Champion)', desc: '세상의 모든 것에 “왜?”라는 질문을 던지는 지적 반항아. 논리적으로 상대를 압도하는 걸 즐기며, 토론 자체를 즐기는 스타일. 가끔은 너무 따져서 미움을 사기도 해요.', example: '선생님의 말에 꼬리에 꼬리를 무는 질문으로 수업 시간을 길게 만듦.' },
+            'ISTP': { type: 'ISTP', name: '쿨한 만능 재주꾼 (Cool All-Rounder)', desc: '말보다는 행동! 손재주가 좋아서 뭐든 뚝딱 고치거나 만들어요. 관심 없는 일엔 세상 쿨하지만, 좋아하는 일엔 밤샘도 불사하는 마이웨이!', example: '고장 난 친구의 이어폰을 순식간에 수리하거나, 3D 프린터로 자기만의 캐릭터를 만듦.' },
+            'ISFP': { type: 'ISFP', name: '섬세한 예술가 (Delicate Artist)', desc: '아름다움과 자유를 추구하는 감성 충만 예술가. 남의 시선에 신경 쓰지 않고 자기만의 스타일을 고수해요. 겉으로는 조용하지만 속으로는 엄청난 열정이 있어요.', example: '수업 시간에 몰래 그림을 그리거나, 교복 위에 자기만의 스타일로 가디건을 걸침.' },
+            'INFP': { type: 'INFP', name: '몽상가 시인 (Dreamer Poet)', desc: '내면세계가 우주만큼 넓은 순수한 이상주의자. 세상의 부조리함에 슬퍼하지만, 따뜻한 마음으로 모두를 포용하려 해요. 가끔 현실과 동떨어져 보일 때도 있어요.', example: '쉬는 시간에 창밖만 바라보며 상상에 빠지거나, 친구의 고민에 깊은 공감의 눈물을 흘림.' },
+            'INTP': { type: 'INTP', name: '지식 탐험가 (Knowledge Explorer)', desc: '머릿속이 24시간 풀가동하는 생각하는 기계. 이론과 분석을 좋아하며, 복잡한 문제 해결에 희열을 느껴요. 사회성이 부족해 보일 수 있지만, 알고 보면 순수해요.', example: '문제 풀다가 새로운 과학 원리를 발견하고 감탄하거나, 친구들에게 어려운 이론을 설명해 줌.' },
+        };
+
+        // DOM 요소 가져오기
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const choicesContainer = document.getElementById('choices-container');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const resultType = document.getElementById('result-type');
+        const resultName = document.getElementById('result-name');
+        const resultDescription = document.getElementById('result-description');
+        const resultExample = document.getElementById('result-example');
+        const rawScoreElement = document.getElementById('raw-score');
+
+
+        /**
+         * 퀴즈를 시작하고 첫 번째 질문을 표시합니다.
+         */
+        function startQuiz() {
+            startScreen.classList.add('hidden');
+            questionScreen.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+            loadQuestion();
+        }
+
+        /**
+         * 현재 질문을 화면에 로드합니다.
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            
+            // 질문 내용 업데이트
+            questionText.textContent = q.q;
+
+            // 선택지 버튼 생성 및 이벤트 리스너 추가
+            choicesContainer.innerHTML = '';
+            q.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.classList.add('choice-btn', 'w-full', 'p-4', 'bg-gray-700', 'rounded-lg', 'text-left', 'text-lg', 'hover:bg-purple-800', 'hover:text-white', 'shadow-md');
+                button.onclick = () => handleAnswer(choice.value);
+                choicesContainer.appendChild(button);
+            });
+
+            // 진행률 업데이트
+            updateProgress();
+        }
+
+        /**
+         * 답변을 처리하고 다음 질문으로 넘어갑니다.
+         * @param {string} value - 선택된 MBTI 차원 값 (예: 'E', 'I', 'S', 'N' 등)
+         */
+        function handleAnswer(value) {
+            // 점수 기록
+            score[value] += 1;
+            
+            // 다음 질문으로 이동
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        /**
+         * 퀴즈 진행률을 업데이트합니다.
+         */
+        function updateProgress() {
+            const current = currentQuestionIndex + 1;
+            const total = questions.length;
+            const percentage = (currentQuestionIndex / total) * 100;
+            
+            progressText.textContent = `질문 ${current}/${total}`;
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        /**
+         * 최종 결과를 계산하고 표시합니다.
+         */
+        function showResult() {
+            questionScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            // 1. E/I 결정 (E 2점, I 2점)
+            const typeE = score.E > score.I ? 'E' : 'I';
+            
+            // 2. S/N 결정 (S 3점, N 3점)
+            const typeS = score.S > score.N ? 'S' : 'N';
+            
+            // 3. T/F 결정 (T 2점, F 2점)
+            const typeT = score.T > score.F ? 'T' : 'F';
+            
+            // 4. J/P 결정 (J 3점, P 3점)
+            const typeJ = score.J > score.P ? 'J' : 'P';
+            
+            // 최종 MBTI 유형 조합
+            const finalType = typeE + typeS + typeT + typeJ;
+            const result = results[finalType] || { 
+                type: finalType, 
+                name: '알 수 없는 유형 (Error)', 
+                desc: '결과를 계산하는 중 오류가 발생했습니다.', 
+                example: '죄송합니다. 개발자에게 문의해주세요.' 
+            };
+
+            // 결과 화면 업데이트
+            resultType.textContent = result.type;
+            resultName.textContent = result.name;
+            resultDescription.textContent = result.desc;
+            resultExample.innerHTML = `<span class="font-bold text-purple-300">👍 예시:</span> ${result.example}`;
+            
+            // 디버깅을 위한 원점수 표시
+            rawScoreElement.textContent = `E:${score.E}, I:${score.I} | S:${score.S}, N:${score.N} | T:${score.T}, F:${score.F} | J:${score.J}, P:${score.P}`;
+        }
+
+        /**
+         * 퀴즈를 처음 상태로 되돌립니다.
+         */
+        function restartQuiz() {
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            progressBar.style.width = '0%';
+        }
+
+        // 초기 시작
+        // Note: The UI is already showing the start screen, so no need to call a function on load.
+    </script>
+
+</body>
+</html>
